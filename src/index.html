@@ -20,7 +20,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
     <!-- Math Processor -->
-    <script src="math-processor.js"></script>
+    <script type="module" src="math-processor.js"></script>
     
     <style>
         :root {
@@ -967,6 +967,15 @@
                         resolve();
                     } else {
                         window.addEventListener('puter-ready', resolve);
+                    }
+                });
+
+                // Wait for Math.js to be ready
+                await new Promise((resolve) => {
+                    if (window.math) {
+                        resolve();
+                    } else {
+                        window.addEventListener('math-ready', resolve);
                     }
                 });
 
