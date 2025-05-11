@@ -978,9 +978,9 @@
                 // Initialize MathProcessor
                 mathProcessor = new MathProcessor();
                 
-                // Test Puter with a simple chat
+                // Test Puter with a simple chat using DeepSeek-R1
                 try {
-                    const response = await puter.ai.chat('Hello');
+                    const response = await puter.ai.chat('Hello', { model: 'deepseek-r1' });
                     isPuterInitialized = true;
                     authStatus.textContent = 'Puter AI is ready';
                     authStatus.style.color = 'var(--success-color)';
@@ -1014,7 +1014,7 @@
 
             showLoading('Processing...');
             try {
-                const response = await puter.ai.chat(message);
+                const response = await puter.ai.chat(message, { model: 'deepseek-r1' });
                 isPuterInitialized = true;
                 authStatus.textContent = 'Puter AI is ready';
                 authStatus.style.color = 'var(--success-color)';
@@ -1107,35 +1107,70 @@
                 };
                 reader.readAsDataURL(file);
 
-                // Use Puter's OCR to extract text
-                const result = await puter.ai.img2txt(file);
+                // Use Puter's OCR to extract text with DeepSeek-R1 model
+                const result = await puter.ai.img2txt(file, false, { model: 'deepseek-r1' });
                 
-                if (result && result.text) {
-                    // Process the extracted text
-                    const equation = result.text.trim();
-                    mathExpression.textContent = equation;
-                    
-                    // Solve the equation
-                    const solution = mathProcessor.solveEquation(equation);
-                    const steps = mathProcessor.generateSolutionSteps(equation, solution);
+                if (!result) {
+                    throw new Error('Failed to process image: No result returned');
+                }
+
+                if (!result.text || result.text.trim() === '') {
+                    throw new Error('No text could be extracted from the image. Please try a clearer image.');
+                }
+
+                // Display the extracted text
+                const extractedText = result.text.trim();
+                mathExpression.innerHTML = `
+                    <h3>Extracted Text</h3>
+                    <div class="extracted-text">${extractedText}</div>
+                `;
+
+                try {
+                    // Try to solve the equation
+                    const solution = mathProcessor.solveEquation(extractedText);
+                    const steps = mathProcessor.generateSolutionSteps(extractedText, solution);
                     
                     // Display solution steps
-                    solutionSteps.innerHTML = steps.map((step, index) => `
-                        <div class="step">
-                            <span class="step-number">${index + 1}.</span>
-                            ${step}
-                        </div>
-                    `).join('');
+                    solutionSteps.innerHTML = `
+                        <h3>Solution</h3>
+                        ${steps.map((step, index) => `
+                            <div class="step">
+                                <span class="step-number">${index + 1}.</span>
+                                <div class="step-content">$${step}$</div>
+                            </div>
+                        `).join('')}
+                    `;
                     
-                    resultSection.classList.add('active');
-                    showSuccess('Image processed successfully');
-                } else {
-                    throw new Error('No text could be extracted from the image');
+                    // Render math expressions
+                    renderMathInElement(document.body, {
+                        delimiters: [
+                            {left: '$$', right: '$$', display: true},
+                            {left: '$', right: '$', display: false}
+                        ],
+                        throwOnError: false
+                    });
+
+                    showSuccess('Image processed and equation solved successfully');
+                } catch (solveError) {
+                    // If solving fails, still show the extracted text
+                    solutionSteps.innerHTML = `
+                        <div class="warning-message">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            Could not solve the equation: ${solveError.message}
+                        </div>
+                    `;
+                    showWarning('Text extracted but could not solve the equation');
                 }
+                
+                resultSection.classList.add('active');
             } catch (error) {
-                errorMessage.textContent = error.message;
+                errorMessage.textContent = error.message || 'An unknown error occurred';
                 errorMessage.classList.add('active');
-                showError(error.message);
+                showError(error.message || 'An unknown error occurred');
+                
+                // Clear previous results
+                mathExpression.innerHTML = '';
+                solutionSteps.innerHTML = '';
             } finally {
                 hideLoading();
             }
