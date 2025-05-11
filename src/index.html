@@ -1,0 +1,1372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Math Equation Solver - EU Standards</title>
+    
+    <!-- Puter.js for OCR and AI -->
+    <script src="https://js.puter.com/v2/"></script>
+    
+    <!-- KaTeX for math rendering -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+    
+    <!-- Math.js for symbolic math -->
+    <script src="https://cdn.jsdelivr.net/npm/mathjs@11.8.0/lib/browser/math.js"></script>
+    
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --primary-color-dark: #1a252f;
+            --secondary-color: #3498db;
+            --background-color: #f8f9fa;
+            --surface-color: #ffffff;
+            --text-color: #2c3e50;
+            --border-color: #e9ecef;
+            --error-color: #e74c3c;
+            --warning-color: #f39c12;
+            --success-color: #27ae60;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: var(--background-color);
+            color: var(--text-color);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        h1 {
+            color: var(--primary-color);
+            text-align: center;
+            margin-bottom: 2rem;
+            font-size: 2rem;
+        }
+
+        .upload-section {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding: 2rem;
+            border: 2px dashed var(--border-color);
+            border-radius: 8px;
+            background-color: white;
+        }
+
+        .upload-section.dragover {
+            border-color: var(--secondary-color);
+            background-color: rgba(52, 152, 219, 0.1);
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .upload-button {
+            background-color: var(--secondary-color);
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.3s;
+        }
+
+        .upload-button:hover {
+            background-color: #2980b9;
+        }
+
+        .loading {
+            text-align: center;
+            margin: 2rem 0;
+            display: none;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid var(--border-color);
+            border-top: 4px solid var(--secondary-color);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .result-section {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background-color: white;
+            display: none;
+        }
+
+        .result-section.active {
+            display: block;
+        }
+
+        .image-preview {
+            max-width: 100%;
+            margin: 1rem 0;
+            border-radius: 4px;
+            display: none;
+        }
+
+        .image-preview.active {
+            display: block;
+        }
+
+        .error-message {
+            color: var(--error-color);
+            text-align: center;
+            margin: 1rem 0;
+            padding: 1rem;
+            background-color: rgba(231, 76, 60, 0.1);
+            border-radius: 4px;
+            display: none;
+        }
+
+        .error-message.active {
+            display: block;
+        }
+
+        /* EU Standards Styling */
+        .math-expression {
+            font-family: 'KaTeX_Main', 'Times New Roman', serif;
+            margin: 1rem 0;
+            padding: 1rem;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+
+        .unit-display {
+            font-family: 'KaTeX_Main', 'Times New Roman', serif;
+            color: var(--primary-color);
+        }
+
+        .decimal-separator {
+            font-family: 'KaTeX_Main', 'Times New Roman', serif;
+        }
+
+        .thousands-separator {
+            font-family: 'KaTeX_Main', 'Times New Roman', serif;
+        }
+
+        /* Solution Steps Styling */
+        .solution-steps {
+            margin: 1rem 0;
+            padding: 1rem;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+        }
+
+        .step {
+            margin: 0.5rem 0;
+            padding: 0.5rem;
+            border-left: 3px solid var(--secondary-color);
+        }
+
+        .step-number {
+            font-weight: bold;
+            color: var(--secondary-color);
+            margin-right: 0.5rem;
+        }
+
+        /* Unit Conversion Display */
+        .unit-conversion {
+            margin: 1rem 0;
+            padding: 1rem;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+        }
+
+        .conversion-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 0.5rem 0;
+            padding: 0.5rem;
+            background-color: white;
+            border-radius: 4px;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+
+            .math-tools {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* New Styles for Additional Features */
+        .tabs {
+            display: flex;
+            margin-bottom: 1rem;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .tab {
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            border: none;
+            background: none;
+            color: var(--text-color);
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+
+        .tab.active {
+            color: var(--secondary-color);
+            border-bottom: 2px solid var(--secondary-color);
+            margin-bottom: -2px;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .history-section {
+            margin-top: 2rem;
+        }
+
+        .history-item {
+            padding: 1rem;
+            margin: 0.5rem 0;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .history-item:hover {
+            background-color: var(--background-color);
+        }
+
+        .settings-panel {
+            padding: 1rem;
+            background-color: var(--background-color);
+            border-radius: 4px;
+            margin-bottom: 1rem;
+        }
+
+        .setting-group {
+            margin-bottom: 1rem;
+        }
+
+        .setting-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+        }
+
+        .setting-option {
+            margin: 0.5rem 0;
+        }
+
+        .math-tools {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .tool-group {
+            background: var(--surface-color);
+            padding: 1rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .tool-group h4 {
+            margin: 0 0 0.5rem 0;
+            color: var(--text-color);
+            font-size: 0.9rem;
+        }
+
+        .tool-group button {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0.5rem;
+            margin: 0.25rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.2s;
+        }
+
+        .tool-group button:hover {
+            background: var(--primary-color-dark);
+        }
+
+        .equation-input-container {
+            background: var(--surface-color);
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+
+        .equation-type-selector {
+            margin-bottom: 1rem;
+        }
+
+        .equation-type-selector select {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background: var(--background-color);
+            color: var(--text-color);
+        }
+
+        .equation-input {
+            position: relative;
+            margin-bottom: 1rem;
+        }
+
+        .equation-input input {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 1rem;
+            background: var(--background-color);
+            color: var(--text-color);
+        }
+
+        .equation-preview {
+            margin-top: 0.5rem;
+            padding: 0.5rem;
+            background: var(--background-color);
+            border-radius: 4px;
+            min-height: 2rem;
+        }
+
+        .validation-display {
+            margin-top: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .validation-display .error {
+            color: var(--error-color);
+        }
+
+        .validation-display .warning {
+            color: var(--warning-color);
+        }
+
+        .solution-display {
+            background: var(--surface-color);
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+        }
+
+        .solution-steps {
+            margin-bottom: 1rem;
+        }
+
+        .solution-step {
+            margin-bottom: 0.5rem;
+            padding: 0.5rem;
+            background: var(--background-color);
+            border-radius: 4px;
+        }
+
+        .solution-result {
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+        }
+
+        .solution-validation {
+            font-size: 0.9rem;
+        }
+
+        .solve-button {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.2s;
+            width: 100%;
+        }
+
+        .solve-button:hover {
+            background: var(--primary-color-dark);
+        }
+
+        .theme-switch {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            padding: 0.5rem;
+            border-radius: 50%;
+            background: var(--background-color);
+            border: 1px solid var(--border-color);
+            cursor: pointer;
+        }
+
+        /* Dark theme */
+        [data-theme="dark"] {
+            --primary-color: #3498db;
+            --secondary-color: #2ecc71;
+            --background-color: #2c3e50;
+            --text-color: #ecf0f1;
+            --border-color: #34495e;
+        }
+
+        [data-theme="dark"] .container,
+        [data-theme="dark"] .upload-section,
+        [data-theme="dark"] .result-section,
+        [data-theme="dark"] .tool-button,
+        [data-theme="dark"] .key {
+            background-color: #34495e;
+            color: var(--text-color);
+        }
+
+        [data-theme="dark"] .math-expression,
+        [data-theme="dark"] .solution-steps,
+        [data-theme="dark"] .unit-conversion {
+            background-color: #2c3e50;
+        }
+
+        .tool-group {
+            margin-bottom: 1rem;
+            padding: 1rem;
+            background-color: var(--background-color);
+            border-radius: 4px;
+        }
+
+        .tool-group h4 {
+            margin: 0 0 0.5rem 0;
+            color: var(--primary-color);
+        }
+
+        .equation-input-container {
+            position: relative;
+            margin: 1rem 0;
+        }
+
+        .equation-validation {
+            position: absolute;
+            right: 0;
+            top: 100%;
+            font-size: 0.9rem;
+            margin-top: 0.25rem;
+        }
+
+        .equation-validation.valid {
+            color: var(--success-color);
+        }
+
+        .equation-validation.invalid {
+            color: var(--error-color);
+        }
+
+        .equation-type-selector {
+            margin: 1rem 0;
+        }
+
+        .equation-type-select {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background-color: white;
+        }
+
+        .tool-button {
+            font-family: 'KaTeX_Main', 'Times New Roman', serif;
+        }
+
+        .tool-button[data-symbol="pi"]::after {
+            content: "π";
+        }
+
+        .tool-button[data-symbol="e"]::after {
+            content: "e";
+        }
+
+        /* Smooth transitions for all interactive elements */
+        button, input, select, .tab, .tool-group button {
+            transition: all 0.3s ease;
+        }
+
+        /* Hover effects for buttons */
+        .upload-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .upload-button:active {
+            transform: translateY(0);
+        }
+
+        /* Loading animation enhancement */
+        .spinner {
+            transition: all 0.3s ease;
+        }
+
+        .loading.active .spinner {
+            animation: spin 1s linear infinite, pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1) rotate(0deg); }
+            50% { transform: scale(1.1) rotate(180deg); }
+            100% { transform: scale(1) rotate(360deg); }
+        }
+
+        /* Result section animations */
+        .result-section {
+            transition: all 0.5s ease;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        .result-section.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Tool group button animations */
+        .tool-group button {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .tool-group button::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 0.3s, height 0.3s;
+        }
+
+        .tool-group button:active::after {
+            width: 200%;
+            height: 200%;
+        }
+
+        /* Tab animations */
+        .tab {
+            position: relative;
+        }
+
+        .tab::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--secondary-color);
+            transition: width 0.3s ease;
+        }
+
+        .tab:hover::after {
+            width: 100%;
+        }
+
+        .tab.active::after {
+            width: 100%;
+        }
+
+        /* Error message animation */
+        .error-message {
+            transition: all 0.3s ease;
+            transform: translateY(-10px);
+            opacity: 0;
+        }
+
+        .error-message.active {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        /* Success message animation */
+        .success-message {
+            transition: all 0.3s ease;
+            transform: translateY(-10px);
+            opacity: 0;
+        }
+
+        .success-message.active {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        /* Equation preview animation */
+        .equation-preview {
+            transition: all 0.3s ease;
+        }
+
+        .equation-preview.updating {
+            opacity: 0.5;
+            transform: scale(0.98);
+        }
+
+        /* History item animations */
+        .history-item {
+            transition: all 0.3s ease;
+        }
+
+        .history-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Settings panel animations */
+        .setting-option {
+            transition: all 0.3s ease;
+        }
+
+        .setting-option:hover {
+            transform: translateX(5px);
+        }
+
+        /* Responsive improvements */
+        @media (max-width: 768px) {
+            .math-tools {
+                grid-template-columns: 1fr;
+                gap: 0.5rem;
+            }
+
+            .tool-group {
+                margin-bottom: 0.5rem;
+            }
+
+            .tool-group button {
+                padding: 0.4rem;
+                font-size: 0.9rem;
+            }
+
+            .equation-input-container {
+                margin: 0.5rem 0;
+            }
+
+            .result-section {
+                padding: 1rem;
+            }
+        }
+
+        /* Loading overlay */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .loading-overlay.active {
+            display: flex;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Toast notifications */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 1rem;
+            border-radius: 4px;
+            background: var(--surface-color);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .toast.active {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .toast.success {
+            border-left: 4px solid var(--success-color);
+        }
+
+        .toast.error {
+            border-left: 4px solid var(--error-color);
+        }
+
+        .toast.warning {
+            border-left: 4px solid var(--warning-color);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <button class="theme-switch" id="themeSwitch">
+            <i class="fas fa-moon"></i>
+        </button>
+
+        <h1>Math Equation Solver - EU Standards</h1>
+        
+        <!-- Add Puter Auth Button -->
+        <div class="auth-section" style="text-align: center; margin-bottom: 2rem;">
+            <button id="puterAuth" class="upload-button">
+                <i class="fas fa-sign-in-alt"></i> Initialize Puter
+            </button>
+            <div id="authStatus" style="margin-top: 1rem; display: none;"></div>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" data-tab="upload">Upload Image</button>
+            <button class="tab" data-tab="input">Manual Input</button>
+            <button class="tab" data-tab="history">History</button>
+            <button class="tab" data-tab="settings">Settings</button>
+        </div>
+
+        <div class="tab-content active" id="upload">
+            <div class="upload-section" id="uploadSection">
+                <input type="file" id="fileInput" class="file-input" accept="image/*">
+                <button class="upload-button" id="uploadButton">
+                    <i class="fas fa-upload"></i> Upload Image
+                </button>
+                <p>or drag and drop an image here</p>
+            </div>
+        </div>
+
+        <div class="tab-content" id="input">
+            <div class="math-tools">
+                <div class="tool-group">
+                    <h4>Basic Operations</h4>
+                    <button onclick="insertSymbol('+')">+</button>
+                    <button onclick="insertSymbol('-')">−</button>
+                    <button onclick="insertSymbol('*')">×</button>
+                    <button onclick="insertSymbol('/')">÷</button>
+                    <button onclick="insertSymbol('^')">^</button>
+                    <button onclick="insertSymbol('sqrt')">√</button>
+                    <button onclick="insertSymbol('(')">(</button>
+                    <button onclick="insertSymbol(')')">)</button>
+                </div>
+                <div class="tool-group">
+                    <h4>Advanced Functions</h4>
+                    <button onclick="insertSymbol('sin')">sin</button>
+                    <button onclick="insertSymbol('cos')">cos</button>
+                    <button onclick="insertSymbol('tan')">tan</button>
+                    <button onclick="insertSymbol('log')">log</button>
+                    <button onclick="insertSymbol('ln')">ln</button>
+                    <button onclick="insertSymbol('exp')">exp</button>
+                    <button onclick="insertSymbol('pi')">π</button>
+                    <button onclick="insertSymbol('e')">e</button>
+                </div>
+                <div class="tool-group">
+                    <h4>Special Functions</h4>
+                    <button onclick="insertSymbol('gamma')">Γ</button>
+                    <button onclick="insertSymbol('beta')">β</button>
+                    <button onclick="insertSymbol('zeta')">ζ</button>
+                    <button onclick="insertSymbol('erf')">erf</button>
+                    <button onclick="insertSymbol('erfc')">erfc</button>
+                    <button onclick="insertSymbol('J')">J</button>
+                    <button onclick="insertSymbol('Y')">Y</button>
+                    <button onclick="insertSymbol('I')">I</button>
+                    <button onclick="insertSymbol('K')">K</button>
+                </div>
+                <div class="tool-group">
+                    <h4>Calculus</h4>
+                    <button onclick="insertSymbol('int')">∫</button>
+                    <button onclick="insertSymbol('sum')">∑</button>
+                    <button onclick="insertSymbol('prod')">∏</button>
+                    <button onclick="insertSymbol('lim')">lim</button>
+                    <button onclick="insertSymbol('d/dx')">d/dx</button>
+                    <button onclick="insertSymbol('partial')">∂</button>
+                </div>
+                <div class="tool-group">
+                    <h4>Linear Algebra</h4>
+                    <button onclick="insertSymbol('det')">det</button>
+                    <button onclick="insertSymbol('[')">[</button>
+                    <button onclick="insertSymbol(']')">]</button>
+                    <button onclick="insertSymbol('->')">→</button>
+                    <button onclick="insertSymbol('||')">||</button>
+                </div>
+                <div class="tool-group">
+                    <h4>Set Theory</h4>
+                    <button onclick="insertSymbol('in')">∈</button>
+                    <button onclick="insertSymbol('subset')">⊂</button>
+                    <button onclick="insertSymbol('union')">∪</button>
+                    <button onclick="insertSymbol('intersect')">∩</button>
+                </div>
+                <div class="tool-group">
+                    <h4>Logic</h4>
+                    <button onclick="insertSymbol('forall')">∀</button>
+                    <button onclick="insertSymbol('exists')">∃</button>
+                    <button onclick="insertSymbol('implies')">⇒</button>
+                    <button onclick="insertSymbol('iff')">⇔</button>
+                </div>
+            </div>
+
+            <div class="equation-input-container">
+                <div class="equation-type-selector">
+                    <select id="equationType" onchange="updateEquationType()">
+                        <option value="algebraic">Algebraic</option>
+                        <option value="trigonometric">Trigonometric</option>
+                        <option value="exponential">Exponential</option>
+                        <option value="logarithmic">Logarithmic</option>
+                        <option value="differential">Differential</option>
+                        <option value="integral">Integral</option>
+                        <option value="matrix">Matrix</option>
+                        <option value="vector">Vector</option>
+                        <option value="inequality">Inequality</option>
+                        <option value="system">System of Equations</option>
+                    </select>
+                </div>
+                <div class="equation-input">
+                    <input type="text" id="equationInput" placeholder="Enter your equation" oninput="validateAndPreview()">
+                    <div id="equationPreview" class="equation-preview"></div>
+                    <div id="validationDisplay" class="validation-display"></div>
+                </div>
+                <button onclick="solveEquation()" class="solve-button">Solve</button>
+            </div>
+        </div>
+
+        <div class="tab-content" id="history">
+            <div class="history-section" id="historySection">
+                <!-- History items will be added here -->
+            </div>
+        </div>
+
+        <div class="tab-content" id="settings">
+            <div class="settings-panel">
+                <div class="setting-group">
+                    <label class="setting-label">Number Format</label>
+                    <div class="setting-option">
+                        <input type="radio" id="euFormat" name="numberFormat" value="eu" checked>
+                        <label for="euFormat">EU Format (1.234,56)</label>
+                    </div>
+                    <div class="setting-option">
+                        <input type="radio" id="usFormat" name="numberFormat" value="us">
+                        <label for="usFormat">US Format (1,234.56)</label>
+                    </div>
+                </div>
+                <div class="setting-group">
+                    <label class="setting-label">Default Units</label>
+                    <select id="defaultUnits" class="setting-select">
+                        <option value="metric">Metric (SI)</option>
+                        <option value="imperial">Imperial</option>
+                    </select>
+                </div>
+                <div class="setting-group">
+                    <label class="setting-label">Display Options</label>
+                    <div class="setting-option">
+                        <input type="checkbox" id="showSteps" checked>
+                        <label for="showSteps">Show Solution Steps</label>
+                    </div>
+                    <div class="setting-option">
+                        <input type="checkbox" id="showUnits" checked>
+                        <label for="showUnits">Show Unit Conversions</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Processing...</p>
+        </div>
+
+        <div class="result-section" id="resultSection">
+            <div class="image-preview" id="imagePreview"></div>
+            <div class="math-expression" id="mathExpression"></div>
+            <div class="solution-steps" id="solutionSteps"></div>
+            
+            <div class="export-options">
+                <button class="export-button" onclick="exportAsPDF()">
+                    <i class="fas fa-file-pdf"></i> Export as PDF
+                </button>
+                <button class="export-button" onclick="exportAsLaTeX()">
+                    <i class="fas fa-code"></i> Export as LaTeX
+                </button>
+                <button class="export-button" onclick="copyToClipboard()">
+                    <i class="fas fa-copy"></i> Copy to Clipboard
+                </button>
+            </div>
+        </div>
+
+        <div class="error-message" id="errorMessage"></div>
+    </div>
+
+    <script type="module">
+        import { MathProcessor } from './math-processor.js';
+
+        // Initialize MathProcessor
+        const mathProcessor = new MathProcessor();
+        
+        // Get DOM elements
+        const uploadSection = document.getElementById('uploadSection');
+        const fileInput = document.getElementById('fileInput');
+        const uploadButton = document.getElementById('uploadButton');
+        const loading = document.getElementById('loading');
+        const resultSection = document.getElementById('resultSection');
+        const imagePreview = document.getElementById('imagePreview');
+        const mathExpression = document.getElementById('mathExpression');
+        const solutionSteps = document.getElementById('solutionSteps');
+        const errorMessage = document.getElementById('errorMessage');
+        const equationInput = document.getElementById('equationInput');
+        const equationType = document.getElementById('equationType');
+
+        // Initialize Puter authentication
+        let isPuterInitialized = false;
+        const puterAuthButton = document.getElementById('puterAuth');
+        const authStatus = document.getElementById('authStatus');
+
+        // Function to insert symbols into equation input
+        window.insertSymbol = function(symbol) {
+            const input = document.getElementById('equationInput');
+            const start = input.selectionStart;
+            const end = input.selectionEnd;
+            const text = input.value;
+            const newText = text.substring(0, start) + symbol + text.substring(end);
+            input.value = newText;
+            input.focus();
+            input.setSelectionRange(start + symbol.length, start + symbol.length);
+            validateAndPreview();
+        };
+
+        // Function to solve equation
+        window.solveEquation = async function() {
+            const equation = equationInput.value.trim();
+            if (!equation) {
+                showError('Please enter an equation');
+                return;
+            }
+
+            showLoading('Solving equation...');
+            try {
+                const solution = mathProcessor.solveEquation(equation);
+                const steps = mathProcessor.generateSolutionSteps(equation, solution);
+                
+                // Display solution
+                mathExpression.innerHTML = `
+                    <h3>Original Equation</h3>
+                    <div class="equation">$${equation}$</div>
+                    <h3>Solution</h3>
+                    <div class="solution">$${solution}$</div>
+                `;
+                
+                // Display steps
+                solutionSteps.innerHTML = `
+                    <h3>Solution Steps</h3>
+                    ${steps.map((step, index) => `
+                        <div class="step">
+                            <span class="step-number">${index + 1}.</span>
+                            <div class="step-content">$${step}$</div>
+                        </div>
+                    `).join('')}
+                `;
+                
+                // Add to history
+                addToHistory(equation, solution);
+                
+                // Show result section
+                resultSection.classList.add('active');
+                showSuccess('Equation solved successfully');
+                
+                // Render math expressions
+                renderMathInElement(document.body, {
+                    delimiters: [
+                        {left: '$$', right: '$$', display: true},
+                        {left: '$', right: '$', display: false}
+                    ],
+                    throwOnError: false
+                });
+            } catch (error) {
+                showError(error.message);
+            } finally {
+                hideLoading();
+            }
+        };
+
+        // Function to add equation to history
+        function addToHistory(equation, solution) {
+            const historySection = document.getElementById('historySection');
+            const historyItem = document.createElement('div');
+            historyItem.className = 'history-item';
+            historyItem.innerHTML = `
+                <div class="equation">$${equation}$</div>
+                <div class="solution">$${solution}$</div>
+                <div class="timestamp">${new Date().toLocaleString()}</div>
+            `;
+            
+            // Add click handler to load equation
+            historyItem.addEventListener('click', () => {
+                equationInput.value = equation;
+                validateAndPreview();
+                document.querySelector('.tab[data-tab="input"]').click();
+            });
+            
+            historySection.insertBefore(historyItem, historySection.firstChild);
+            
+            // Render math in history item
+            renderMathInElement(historyItem, {
+                delimiters: [
+                    {left: '$$', right: '$$', display: true},
+                    {left: '$', right: '$', display: false}
+                ],
+                throwOnError: false
+            });
+        }
+
+        // Function to export as PDF
+        window.exportAsPDF = async function() {
+            showLoading('Generating PDF...');
+            try {
+                const content = document.querySelector('.result-section').innerHTML;
+                const pdf = await puter.ai.chat([
+                    { role: "system", content: "Generate a PDF from this HTML content" },
+                    { role: "user", content }
+                ]);
+                
+                // Create download link
+                const link = document.createElement('a');
+                link.href = pdf.content;
+                link.download = 'math-solution.pdf';
+                link.click();
+                
+                showSuccess('PDF exported successfully');
+            } catch (error) {
+                showError('Failed to export PDF: ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        };
+
+        // Function to export as LaTeX
+        window.exportAsLaTeX = function() {
+            const equation = equationInput.value;
+            const solution = document.querySelector('.solution').textContent;
+            const steps = Array.from(document.querySelectorAll('.step-content'))
+                .map(step => step.textContent)
+                .join('\n');
+            
+            const latex = `\\begin{align*}
+                \\text{Original Equation: } & ${equation} \\\\
+                \\text{Solution: } & ${solution} \\\\
+                \\text{Steps: } & ${steps}
+            \\end{align*}`;
+            
+            navigator.clipboard.writeText(latex);
+            showSuccess('LaTeX code copied to clipboard');
+        };
+
+        // Function to copy to clipboard
+        window.copyToClipboard = function() {
+            const content = document.querySelector('.result-section').textContent;
+            navigator.clipboard.writeText(content);
+            showSuccess('Solution copied to clipboard');
+        };
+
+        // Function to update equation type
+        window.updateEquationType = function() {
+            validateAndPreview();
+        };
+
+        // Function to validate and preview equation
+        function validateAndPreview() {
+            const equation = equationInput.value;
+            const type = equationType.value;
+            const previewElement = document.getElementById('equationPreview');
+            
+            previewElement.classList.add('updating');
+            
+            try {
+                const preview = mathProcessor.generatePreview(equation, type);
+                
+                if (preview.isValid) {
+                    katex.render(preview.latex, previewElement);
+                    showSuccess('Equation is valid');
+                } else {
+                    previewElement.textContent = equation;
+                    showError(preview.error);
+                }
+            } catch (error) {
+                previewElement.textContent = equation;
+                showError(error.message);
+            } finally {
+                previewElement.classList.remove('updating');
+            }
+        }
+
+        // Initialize event listeners
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initialize KaTeX auto-render
+            renderMathInElement(document.body, {
+                delimiters: [
+                    {left: '$$', right: '$$', display: true},
+                    {left: '$', right: '$', display: false}
+                ],
+                throwOnError: false
+            });
+
+            // Add input event listener for real-time validation
+            equationInput.addEventListener('input', validateAndPreview);
+
+            // Add keyboard shortcut for solving (Ctrl+Enter)
+            equationInput.addEventListener('keydown', (e) => {
+                if (e.ctrlKey && e.key === 'Enter') {
+                    solveEquation();
+                }
+            });
+        });
+
+        // Initialize Puter authentication
+        puterAuthButton.addEventListener('click', async () => {
+            showLoading('Initializing Puter...');
+            try {
+                await puter.init();
+                isPuterInitialized = true;
+                authStatus.textContent = 'Puter initialized successfully!';
+                authStatus.style.color = 'var(--success-color)';
+                authStatus.style.display = 'block';
+                puterAuthButton.disabled = true;
+                puterAuthButton.textContent = 'Puter Initialized';
+                showSuccess('Puter initialized successfully');
+            } catch (error) {
+                authStatus.textContent = 'Failed to initialize Puter: ' + error.message;
+                authStatus.style.color = 'var(--error-color)';
+                authStatus.style.display = 'block';
+                showError('Failed to initialize Puter: ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        });
+
+        // Handle file upload button click
+        uploadButton.addEventListener('click', () => {
+            if (!isPuterInitialized) {
+                errorMessage.textContent = 'Please initialize Puter first';
+                errorMessage.classList.add('active');
+                return;
+            }
+            fileInput.click();
+        });
+
+        // Handle file selection
+        fileInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                await processImage(file);
+            }
+        });
+
+        // Handle drag and drop
+        uploadSection.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadSection.classList.add('dragover');
+        });
+
+        uploadSection.addEventListener('dragleave', () => {
+            uploadSection.classList.remove('dragover');
+        });
+
+        uploadSection.addEventListener('drop', async (e) => {
+            e.preventDefault();
+            uploadSection.classList.remove('dragover');
+            
+            if (!isPuterInitialized) {
+                errorMessage.textContent = 'Please initialize Puter first';
+                errorMessage.classList.add('active');
+                return;
+            }
+
+            const file = e.dataTransfer.files[0];
+            if (file) {
+                await processImage(file);
+            }
+        });
+
+        // Process the uploaded image
+        async function processImage(file) {
+            showLoading('Processing image...');
+            try {
+                loading.classList.add('active');
+                errorMessage.classList.remove('active');
+                resultSection.classList.remove('active');
+
+                // Display image preview
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    imagePreview.src = e.target.result;
+                    imagePreview.classList.add('active');
+                };
+                reader.readAsDataURL(file);
+
+                // Use Puter's OCR to extract text
+                const result = await puter.ai.img2txt(file);
+                
+                if (result && result.text) {
+                    // Process the extracted text
+                    const equation = result.text.trim();
+                    mathExpression.textContent = equation;
+                    
+                    // Solve the equation
+                    const solution = mathProcessor.solveEquation(equation);
+                    const steps = mathProcessor.generateSolutionSteps(equation, solution);
+                    
+                    // Display solution steps
+                    solutionSteps.innerHTML = steps.map((step, index) => `
+                        <div class="step">
+                            <span class="step-number">${index + 1}.</span>
+                            ${step}
+                        </div>
+                    `).join('');
+                    
+                    resultSection.classList.add('active');
+                    showSuccess('Image processed successfully');
+                } else {
+                    throw new Error('No text could be extracted from the image');
+                }
+            } catch (error) {
+                errorMessage.textContent = error.message;
+                errorMessage.classList.add('active');
+                showError(error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // New functionality for tabs
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                const targetId = tab.dataset.tab;
+                const targetContent = document.getElementById(targetId);
+                
+                // Animate out current content
+                document.querySelector('.tab-content.active').classList.remove('active');
+                
+                // Animate in new content
+                targetContent.classList.add('active');
+                
+                // Update tabs
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                
+                showToast(`Switched to ${tab.textContent} tab`, 'info');
+            });
+        });
+
+        // Theme switching
+        const themeSwitch = document.getElementById('themeSwitch');
+        themeSwitch.addEventListener('click', () => {
+            document.body.dataset.theme = document.body.dataset.theme === 'dark' ? 'light' : 'dark';
+            themeSwitch.innerHTML = document.body.dataset.theme === 'dark' ? 
+                '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+        });
+
+        // Math tools functionality
+        document.querySelectorAll('.tool-group button').forEach(button => {
+            button.addEventListener('click', () => {
+                const input = document.getElementById('equationInput');
+                input.value += button.dataset.symbol;
+            });
+        });
+
+        // Settings management
+        document.getElementById('defaultUnits').addEventListener('change', function(e) {
+            mathProcessor.setDefaultUnits(e.target.value);
+        });
+
+        document.getElementById('showSteps').addEventListener('change', function(e) {
+            document.getElementById('solutionSteps').style.display = e.target.checked ? 'block' : 'none';
+        });
+
+        document.getElementById('showUnits').addEventListener('change', function(e) {
+            document.getElementById('unitConversion').style.display = e.target.checked ? 'block' : 'none';
+        });
+
+        // Toast notification system
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+
+            // Trigger reflow
+            toast.offsetHeight;
+
+            // Show toast
+            toast.classList.add('active');
+
+            // Remove after 3 seconds
+            setTimeout(() => {
+                toast.classList.remove('active');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // Enhanced loading state
+        function showLoading(message = 'Processing...') {
+            const loading = document.getElementById('loading');
+            loading.querySelector('p').textContent = message;
+            loading.classList.add('active');
+        }
+
+        function hideLoading() {
+            const loading = document.getElementById('loading');
+            loading.classList.remove('active');
+        }
+
+        // Enhanced error handling
+        function showError(message) {
+            const errorMessage = document.getElementById('errorMessage');
+            errorMessage.textContent = message;
+            errorMessage.classList.add('active');
+            showToast(message, 'error');
+        }
+
+        // Enhanced success handling
+        function showSuccess(message) {
+            showToast(message, 'success');
+        }
+    </script>
+</body>
+</html> 

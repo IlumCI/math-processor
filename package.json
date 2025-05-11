@@ -1,0 +1,18 @@
+{
+  "name": "math-equation-solver",
+  "version": "1.0.0",
+  "description": "A web-based math equation solver with OCR capabilities",
+  "main": "src/index.html",
+  "scripts": {
+    "start": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "katex": "^0.16.9",
+    "mathjs": "^11.8.0"
+  },
+  "devDependencies": {
+    "vite": "^5.0.0"
+  }
+} 
