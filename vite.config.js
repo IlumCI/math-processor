@@ -8,8 +8,13 @@ export default defineConfig({
   },
   root: 'src',  // This tells Vite where to find the index.html
   build: {
-    outDir: 'dist',
+    outDir: '../dist',
     emptyOutDir: true,
-    sourcemap: true
+    sourcemap: true,
+    rollupOptions: {
+      input: {
+        main: 'src/index.html'
+      }
+    }
   }
 }) 
