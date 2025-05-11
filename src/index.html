@@ -756,9 +756,12 @@
         
         <!-- Add Puter Auth Button -->
         <div class="auth-section" style="text-align: center; margin-bottom: 2rem;">
-            <button id="puterAuth" class="upload-button">
-                <i class="fas fa-sign-in-alt"></i> Initialize Puter
-            </button>
+            <div class="chat-input-container" style="max-width: 600px; margin: 0 auto;">
+                <input type="text" id="puterChatInput" placeholder="Ask Puter AI anything..." style="width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid var(--border-color); border-radius: 4px;">
+                <button id="puterChatButton" class="upload-button">
+                    <i class="fas fa-paper-plane"></i> Send
+                </button>
+            </div>
             <div id="authStatus" style="margin-top: 1rem; display: none;"></div>
         </div>
 
@@ -946,6 +949,9 @@
         let mathProcessor = null;
         
         // DOM Elements
+        const puterChatInput = document.getElementById('puterChatInput');
+        const puterChatButton = document.getElementById('puterChatButton');
+        const authStatus = document.getElementById('authStatus');
         const uploadButton = document.getElementById('uploadButton');
         const fileInput = document.getElementById('fileInput');
         const uploadSection = document.getElementById('uploadSection');
@@ -955,21 +961,11 @@
         const imagePreview = document.getElementById('imagePreview');
         const mathExpression = document.getElementById('mathExpression');
         const solutionSteps = document.getElementById('solutionSteps');
-        const authStatus = document.getElementById('authStatus');
 
         // Initialize Puter and MathProcessor
         async function initialize() {
             showLoading('Initializing...');
             try {
-                // Wait for Puter to be ready
-                await new Promise((resolve) => {
-                    if (window.puter) {
-                        resolve();
-                    } else {
-                        window.addEventListener('puter-ready', resolve);
-                    }
-                });
-
                 // Wait for Math.js to be ready
                 await new Promise((resolve) => {
                     if (window.math) {
@@ -979,27 +975,58 @@
                     }
                 });
 
-                // Initialize Puter
-                await puter.init();
-                isPuterInitialized = true;
-                
                 // Initialize MathProcessor
                 mathProcessor = new MathProcessor();
                 
-                authStatus.textContent = 'Initialization successful';
+                // Test Puter with a simple chat
+                try {
+                    const response = await puter.ai.chat('Hello');
+                    isPuterInitialized = true;
+                    authStatus.textContent = 'Puter AI is ready';
+                    authStatus.style.color = 'var(--success-color)';
+                    authStatus.style.display = 'block';
+                    showSuccess('Initialization successful');
+                    
+                    // Enable buttons and inputs
+                    document.querySelectorAll('button, input').forEach(el => {
+                        el.disabled = false;
+                    });
+                } catch (error) {
+                    authStatus.textContent = 'Puter AI is not ready. Please try sending a message.';
+                    authStatus.style.color = 'var(--warning-color)';
+                    authStatus.style.display = 'block';
+                    showWarning('Puter AI needs initialization. Please send a message.');
+                }
+            } catch (error) {
+                authStatus.textContent = 'Failed to initialize: ' + error.message;
+                authStatus.style.color = 'var(--error-color)';
+                authStatus.style.display = 'block';
+                showError('Failed to initialize: ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Handle Puter chat
+        async function handlePuterChat() {
+            const message = puterChatInput.value.trim();
+            if (!message) return;
+
+            showLoading('Processing...');
+            try {
+                const response = await puter.ai.chat(message);
+                isPuterInitialized = true;
+                authStatus.textContent = 'Puter AI is ready';
                 authStatus.style.color = 'var(--success-color)';
                 authStatus.style.display = 'block';
-                showSuccess('Initialization successful');
+                showSuccess('Puter AI is ready');
                 
                 // Enable buttons and inputs
                 document.querySelectorAll('button, input').forEach(el => {
                     el.disabled = false;
                 });
             } catch (error) {
-                authStatus.textContent = 'Failed to initialize: ' + error.message;
-                authStatus.style.color = 'var(--error-color)';
-                authStatus.style.display = 'block';
-                showError('Failed to initialize: ' + error.message);
+                showError('Failed to communicate with Puter AI: ' + error.message);
             } finally {
                 hideLoading();
             }
@@ -1012,6 +1039,12 @@
                 el.disabled = true;
             });
             initialize();
+
+            // Add event listeners for Puter chat
+            puterChatButton.addEventListener('click', handlePuterChat);
+            puterChatInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') handlePuterChat();
+            });
         });
 
         // Handle file upload button click
