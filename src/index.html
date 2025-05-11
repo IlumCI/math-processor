@@ -19,6 +19,9 @@
     <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
+    <!-- Math Processor -->
+    <script src="math-processor.js"></script>
+    
     <style>
         :root {
             --primary-color: #2c3e50;
@@ -938,26 +941,163 @@
     <script type="module">
         import { MathProcessor } from './math-processor.js';
 
-        // Initialize MathProcessor
-        const mathProcessor = new MathProcessor();
+        // Initialize variables
+        let isPuterInitialized = false;
+        let mathProcessor = null;
         
-        // Get DOM elements
-        const uploadSection = document.getElementById('uploadSection');
-        const fileInput = document.getElementById('fileInput');
+        // DOM Elements
         const uploadButton = document.getElementById('uploadButton');
+        const fileInput = document.getElementById('fileInput');
+        const uploadSection = document.getElementById('uploadSection');
         const loading = document.getElementById('loading');
+        const errorMessage = document.getElementById('errorMessage');
         const resultSection = document.getElementById('resultSection');
         const imagePreview = document.getElementById('imagePreview');
         const mathExpression = document.getElementById('mathExpression');
         const solutionSteps = document.getElementById('solutionSteps');
-        const errorMessage = document.getElementById('errorMessage');
-        const equationInput = document.getElementById('equationInput');
-        const equationType = document.getElementById('equationType');
-
-        // Initialize Puter authentication
-        let isPuterInitialized = false;
-        const puterAuthButton = document.getElementById('puterAuth');
         const authStatus = document.getElementById('authStatus');
+
+        // Initialize Puter and MathProcessor
+        async function initialize() {
+            showLoading('Initializing...');
+            try {
+                // Wait for Puter to be ready
+                await new Promise((resolve) => {
+                    if (window.puter) {
+                        resolve();
+                    } else {
+                        window.addEventListener('puter-ready', resolve);
+                    }
+                });
+
+                // Initialize Puter
+                await puter.init();
+                isPuterInitialized = true;
+                
+                // Initialize MathProcessor
+                mathProcessor = new MathProcessor();
+                
+                authStatus.textContent = 'Initialization successful';
+                authStatus.style.color = 'var(--success-color)';
+                authStatus.style.display = 'block';
+                showSuccess('Initialization successful');
+                
+                // Enable buttons and inputs
+                document.querySelectorAll('button, input').forEach(el => {
+                    el.disabled = false;
+                });
+            } catch (error) {
+                authStatus.textContent = 'Failed to initialize: ' + error.message;
+                authStatus.style.color = 'var(--error-color)';
+                authStatus.style.display = 'block';
+                showError('Failed to initialize: ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            // Disable buttons and inputs until initialization
+            document.querySelectorAll('button, input').forEach(el => {
+                el.disabled = true;
+            });
+            initialize();
+        });
+
+        // Handle file upload button click
+        uploadButton.addEventListener('click', () => {
+            if (!isPuterInitialized || !mathProcessor) {
+                errorMessage.textContent = 'Please wait for initialization to complete';
+                errorMessage.classList.add('active');
+                return;
+            }
+            fileInput.click();
+        });
+
+        // Handle file selection
+        fileInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                await processImage(file);
+            }
+        });
+
+        // Handle drag and drop
+        uploadSection.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadSection.classList.add('dragover');
+        });
+
+        uploadSection.addEventListener('dragleave', () => {
+            uploadSection.classList.remove('dragover');
+        });
+
+        uploadSection.addEventListener('drop', async (e) => {
+            e.preventDefault();
+            uploadSection.classList.remove('dragover');
+            
+            if (!isPuterInitialized || !mathProcessor) {
+                errorMessage.textContent = 'Please wait for initialization to complete';
+                errorMessage.classList.add('active');
+                return;
+            }
+
+            const file = e.dataTransfer.files[0];
+            if (file) {
+                await processImage(file);
+            }
+        });
+
+        // Process the uploaded image
+        async function processImage(file) {
+            showLoading('Processing image...');
+            try {
+                loading.classList.add('active');
+                errorMessage.classList.remove('active');
+                resultSection.classList.remove('active');
+
+                // Display image preview
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    imagePreview.src = e.target.result;
+                    imagePreview.classList.add('active');
+                };
+                reader.readAsDataURL(file);
+
+                // Use Puter's OCR to extract text
+                const result = await puter.ai.img2txt(file);
+                
+                if (result && result.text) {
+                    // Process the extracted text
+                    const equation = result.text.trim();
+                    mathExpression.textContent = equation;
+                    
+                    // Solve the equation
+                    const solution = mathProcessor.solveEquation(equation);
+                    const steps = mathProcessor.generateSolutionSteps(equation, solution);
+                    
+                    // Display solution steps
+                    solutionSteps.innerHTML = steps.map((step, index) => `
+                        <div class="step">
+                            <span class="step-number">${index + 1}.</span>
+                            ${step}
+                        </div>
+                    `).join('');
+                    
+                    resultSection.classList.add('active');
+                    showSuccess('Image processed successfully');
+                } else {
+                    throw new Error('No text could be extracted from the image');
+                }
+            } catch (error) {
+                errorMessage.textContent = error.message;
+                errorMessage.classList.add('active');
+                showError(error.message);
+            } finally {
+                hideLoading();
+            }
+        }
 
         // Function to insert symbols into equation input
         window.insertSymbol = function(symbol) {
@@ -974,7 +1114,7 @@
 
         // Function to solve equation
         window.solveEquation = async function() {
-            const equation = equationInput.value.trim();
+            const equation = document.getElementById('equationInput').value.trim();
             if (!equation) {
                 showError('Please enter an equation');
                 return;
@@ -1039,7 +1179,7 @@
             
             // Add click handler to load equation
             historyItem.addEventListener('click', () => {
-                equationInput.value = equation;
+                document.getElementById('equationInput').value = equation;
                 validateAndPreview();
                 document.querySelector('.tab[data-tab="input"]').click();
             });
@@ -1082,7 +1222,7 @@
 
         // Function to export as LaTeX
         window.exportAsLaTeX = function() {
-            const equation = equationInput.value;
+            const equation = document.getElementById('equationInput').value;
             const solution = document.querySelector('.solution').textContent;
             const steps = Array.from(document.querySelectorAll('.step-content'))
                 .map(step => step.textContent)
@@ -1112,8 +1252,8 @@
 
         // Function to validate and preview equation
         function validateAndPreview() {
-            const equation = equationInput.value;
-            const type = equationType.value;
+            const equation = document.getElementById('equationInput').value;
+            const type = document.getElementById('equationType').value;
             const previewElement = document.getElementById('equationPreview');
             
             previewElement.classList.add('updating');
@@ -1148,149 +1288,13 @@
             });
 
             // Add input event listener for real-time validation
-            equationInput.addEventListener('input', validateAndPreview);
+            document.getElementById('equationInput').addEventListener('input', validateAndPreview);
 
             // Add keyboard shortcut for solving (Ctrl+Enter)
-            equationInput.addEventListener('keydown', (e) => {
+            document.getElementById('equationInput').addEventListener('keydown', (e) => {
                 if (e.ctrlKey && e.key === 'Enter') {
                     solveEquation();
                 }
-            });
-        });
-
-        // Initialize Puter authentication
-        puterAuthButton.addEventListener('click', async () => {
-            showLoading('Initializing Puter...');
-            try {
-                await puter.init();
-                isPuterInitialized = true;
-                authStatus.textContent = 'Puter initialized successfully!';
-                authStatus.style.color = 'var(--success-color)';
-                authStatus.style.display = 'block';
-                puterAuthButton.disabled = true;
-                puterAuthButton.textContent = 'Puter Initialized';
-                showSuccess('Puter initialized successfully');
-            } catch (error) {
-                authStatus.textContent = 'Failed to initialize Puter: ' + error.message;
-                authStatus.style.color = 'var(--error-color)';
-                authStatus.style.display = 'block';
-                showError('Failed to initialize Puter: ' + error.message);
-            } finally {
-                hideLoading();
-            }
-        });
-
-        // Handle file upload button click
-        uploadButton.addEventListener('click', () => {
-            if (!isPuterInitialized) {
-                errorMessage.textContent = 'Please initialize Puter first';
-                errorMessage.classList.add('active');
-                return;
-            }
-            fileInput.click();
-        });
-
-        // Handle file selection
-        fileInput.addEventListener('change', async (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                await processImage(file);
-            }
-        });
-
-        // Handle drag and drop
-        uploadSection.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            uploadSection.classList.add('dragover');
-        });
-
-        uploadSection.addEventListener('dragleave', () => {
-            uploadSection.classList.remove('dragover');
-        });
-
-        uploadSection.addEventListener('drop', async (e) => {
-            e.preventDefault();
-            uploadSection.classList.remove('dragover');
-            
-            if (!isPuterInitialized) {
-                errorMessage.textContent = 'Please initialize Puter first';
-                errorMessage.classList.add('active');
-                return;
-            }
-
-            const file = e.dataTransfer.files[0];
-            if (file) {
-                await processImage(file);
-            }
-        });
-
-        // Process the uploaded image
-        async function processImage(file) {
-            showLoading('Processing image...');
-            try {
-                loading.classList.add('active');
-                errorMessage.classList.remove('active');
-                resultSection.classList.remove('active');
-
-                // Display image preview
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    imagePreview.src = e.target.result;
-                    imagePreview.classList.add('active');
-                };
-                reader.readAsDataURL(file);
-
-                // Use Puter's OCR to extract text
-                const result = await puter.ai.img2txt(file);
-                
-                if (result && result.text) {
-                    // Process the extracted text
-                    const equation = result.text.trim();
-                    mathExpression.textContent = equation;
-                    
-                    // Solve the equation
-                    const solution = mathProcessor.solveEquation(equation);
-                    const steps = mathProcessor.generateSolutionSteps(equation, solution);
-                    
-                    // Display solution steps
-                    solutionSteps.innerHTML = steps.map((step, index) => `
-                        <div class="step">
-                            <span class="step-number">${index + 1}.</span>
-                            ${step}
-                        </div>
-                    `).join('');
-                    
-                    resultSection.classList.add('active');
-                    showSuccess('Image processed successfully');
-                } else {
-                    throw new Error('No text could be extracted from the image');
-                }
-            } catch (error) {
-                errorMessage.textContent = error.message;
-                errorMessage.classList.add('active');
-                showError(error.message);
-            } finally {
-                hideLoading();
-            }
-        }
-
-        // New functionality for tabs
-        document.querySelectorAll('.tab').forEach(tab => {
-            tab.addEventListener('click', () => {
-                const targetId = tab.dataset.tab;
-                const targetContent = document.getElementById(targetId);
-                
-                // Animate out current content
-                document.querySelector('.tab-content.active').classList.remove('active');
-                
-                // Animate in new content
-                targetContent.classList.add('active');
-                
-                // Update tabs
-                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-                tab.classList.add('active');
-                
-                showToast(`Switched to ${tab.textContent} tab`, 'info');
             });
         });
 

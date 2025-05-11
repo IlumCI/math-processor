@@ -1,7 +1,5 @@
 // Phase 3: Symbolic Math Parsing & Solving
-import * as math from 'https://cdn.jsdelivr.net/npm/mathjs@11.8.0/lib/browser/math.js';
-
-export class MathProcessor {
+class MathProcessor {
     constructor() {
         this.parser = math.parser();
         
