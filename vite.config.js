@@ -7,4 +7,9 @@ export default defineConfig({
     open: true  // This will automatically open the browser
   },
   root: 'src',  // This tells Vite where to find the index.html
+  build: {
+    outDir: 'dist',
+    emptyOutDir: true,
+    sourcemap: true
+  }
 }) 
