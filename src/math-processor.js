@@ -1,5 +1,5 @@
 // Phase 3: Symbolic Math Parsing & Solving
-class MathProcessor {
+export class MathProcessor {
     constructor() {
         this.parser = math.parser();
         
